@@ -1,0 +1,287 @@
+/* ============================================================
+   Skill Insight · UI 2.0
+   设计令牌 → 布局 → 组件 → 响应式
+   ============================================================ */
+
+/* ---------- 设计令牌 ---------- */
+.skill-insight-root {
+  --si-accent: #6d76dc;
+  --si-green: #32b58a;
+  --si-orange: #e4a35b;
+  --si-red: #d56565;
+  --si-radius: 14px;
+  --si-radius-sm: 9px;
+  --si-shadow: 0 1px 2px rgb(0 0 0 / 5%), 0 3px 14px rgb(0 0 0 / 6%);
+  --si-shadow-lift: 0 2px 4px rgb(0 0 0 / 6%), 0 10px 26px rgb(0 0 0 / 10%);
+  padding: 26px 30px 18px;
+  overflow-y: auto;
+  container: skill-insight / inline-size;
+  background:
+    radial-gradient(1100px 360px at 88% -160px, color-mix(in srgb, var(--si-accent) 10%, transparent), transparent 72%),
+    var(--background-primary);
+  color: var(--text-normal);
+}
+
+.skill-insight-root * { box-sizing: border-box; }
+.skill-insight-root button { cursor: pointer; }
+
+/* ---------- 顶部标题与控制区 ---------- */
+.skill-insight-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; flex-wrap: wrap; margin-bottom: 20px; }
+.skill-insight-title h1 { font-size: 27px; line-height: 1.2; margin: 8px 0 6px; letter-spacing: -0.01em; }
+.skill-insight-title p { margin: 0; color: var(--text-muted); font-size: 13px; }
+.skill-insight-eyebrow { display: inline-flex; align-items: center; gap: 6px; color: var(--si-accent); background: color-mix(in srgb, var(--si-accent) 12%, transparent); font-size: 10px; font-weight: 800; letter-spacing: 2px; padding: 4px 10px; border-radius: 999px; }
+.skill-insight-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--si-accent); }
+.skill-insight-controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+/* ---------- 按钮 / 胶囊 ---------- */
+.skill-insight-pill,
+.skill-insight-icon-button {
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 7px 13px;
+  font-size: 12px;
+  line-height: 1.2;
+  transition: color .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.skill-insight-pill:hover,
+.skill-insight-icon-button:hover { color: var(--text-normal); border-color: color-mix(in srgb, var(--si-accent) 45%, var(--background-modifier-border)); }
+.skill-insight-pill.is-active { color: var(--si-accent); border-color: var(--si-accent); background: color-mix(in srgb, var(--si-accent) 11%, var(--background-secondary)); font-weight: 600; box-shadow: 0 1px 4px color-mix(in srgb, var(--si-accent) 25%, transparent); }
+.skill-insight-icon-button { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 15px; }
+.skill-insight-icon-button:hover { transform: scale(1.08); }
+
+/* 筛选与动作的分隔线 + 动作按钮（实心强调，区别于筛选胶囊） */
+.skill-insight-divider { width: 1px; height: 22px; background: var(--background-modifier-border); margin: 0 4px; align-self: center; }
+.skill-insight-pill.is-action { color: #fff; border-color: transparent; background: linear-gradient(135deg, var(--si-accent), color-mix(in srgb, var(--si-accent) 65%, #9b6bdd)); font-weight: 600; box-shadow: 0 2px 8px color-mix(in srgb, var(--si-accent) 30%, transparent); }
+.skill-insight-pill.is-action:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px color-mix(in srgb, var(--si-accent) 40%, transparent); }
+
+/* ---------- 下钻筛选胶囊 ---------- */
+.skill-insight-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: -10px 0 14px; }
+.skill-insight-filters .skill-insight-pill { padding: 4px 10px; font-size: 11px; }
+.skill-insight-clear { border: 0; background: transparent; cursor: pointer; font-size: 11px; }
+.skill-insight-clear:hover { color: var(--si-accent); }
+
+/* ---------- 会话卡片页 ---------- */
+.skill-insight-sessions-layout { margin-bottom: 14px; }
+.skill-insight-session-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.skill-insight-session-card { background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: var(--si-radius-sm); box-shadow: var(--si-shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; transition: box-shadow .15s ease, transform .15s ease; }
+.skill-insight-session-card:hover { transform: translateY(-1px); box-shadow: var(--si-shadow-lift); }
+.skill-insight-session-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.skill-insight-session-title { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.skill-insight-session-title strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-insight-session-title small { color: var(--text-faint); font-size: 11px; }
+.skill-insight-session-meta { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+.skill-insight-session-skills { display: flex; gap: 6px; flex-wrap: wrap; }
+.skill-insight-chip { border: 1px solid var(--background-modifier-border); background: var(--background-primary); color: var(--text-muted); border-radius: 999px; padding: 3px 10px; font-size: 11px; line-height: 1.3; transition: color .15s ease, border-color .15s ease; }
+.skill-insight-chip:hover { color: var(--si-accent); border-color: color-mix(in srgb, var(--si-accent) 45%, var(--background-modifier-border)); }
+
+/* ---------- Tabs ---------- */
+.skill-insight-tabs { display: flex; border-bottom: 1px solid var(--background-modifier-border); gap: 22px; margin-bottom: 22px; }
+.skill-insight-tabs button { border: 0; border-radius: 0; box-shadow: none; background: transparent; color: var(--text-muted); padding: 9px 2px 11px; font-size: 13px; position: relative; transition: color .15s ease; }
+.skill-insight-tabs button::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--si-accent); border-radius: 2px; transform: scaleX(0); transition: transform .18s ease; }
+.skill-insight-tabs button:hover { color: var(--text-normal); }
+.skill-insight-tabs button.is-active { color: var(--text-normal); font-weight: 700; }
+.skill-insight-tabs button.is-active::after { transform: scaleX(1); }
+
+/* ---------- 面板与整体布局 ---------- */
+.skill-insight-kpi,
+.skill-insight-panel { background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: var(--si-radius); box-shadow: var(--si-shadow); }
+.skill-insight-panel { padding: 18px 20px; min-width: 0; margin-bottom: 14px; }
+.skill-insight-panel h2 { font-size: 15px; margin: 0 0 16px; letter-spacing: -0.01em; }
+.skill-insight-panel h3 { font-size: 13px; margin: 21px 0 11px; color: var(--text-muted); }
+
+.skill-insight-hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
+.skill-insight-hero > .skill-insight-panel { margin-bottom: 0; }
+.skill-insight-compositions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.skill-insight-compositions > .skill-insight-panel { margin-bottom: 0; min-height: 275px; }
+
+/* ---------- KPI 通栏 ---------- */
+.skill-insight-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.skill-insight-kpi { position: relative; overflow: hidden; padding: 13px 14px; min-height: 88px; display: flex; flex-direction: column; transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
+.skill-insight-kpi::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--si-accent); opacity: .8; }
+.skill-insight-kpi:hover { transform: translateY(-1px); box-shadow: var(--si-shadow-lift); }
+.skill-insight-kpi-label { color: var(--text-muted); font-size: 12px; }
+.skill-insight-kpi strong { font-size: 28px; line-height: 1.3; margin-top: 6px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.skill-insight-kpi small { color: var(--text-faint); font-size: 11px; margin-top: auto; }
+.skill-insight-kpi.is-alert::before { background: var(--si-orange); }
+.skill-insight-kpi.is-alert strong { color: var(--si-orange); }
+
+/* ---------- 文本辅助 ---------- */
+.skill-insight-muted { color: var(--text-muted); font-size: 12px; line-height: 1.55; }
+.skill-insight-warning { padding: 9px 12px; border-radius: var(--si-radius-sm); border: 1px solid color-mix(in srgb, var(--si-orange) 35%, transparent); background: color-mix(in srgb, var(--si-orange) 12%, var(--background-secondary)); font-size: 12px; line-height: 1.55; }
+.skill-insight-insight { display: flex; flex-direction: column; gap: 3px; margin-bottom: 13px; padding-left: 12px; border-left: 2px solid color-mix(in srgb, var(--si-accent) 45%, transparent); }
+.skill-insight-insight strong { font-size: 12px; }
+.skill-insight-insight span { color: var(--text-muted); font-size: 11px; line-height: 1.5; }
+
+/* ---------- 趋势图 ---------- */
+.skill-insight-chart { display: flex; justify-content: center; width: 100%; min-height: 180px; }
+.skill-insight-chart svg { display: block; width: min(100%, 640px); height: 180px; overflow: visible; }
+.skill-insight-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.skill-insight-chart-head h2 { margin-bottom: 0; }
+.skill-insight-chart-modes { display: flex; gap: 5px; flex-wrap: wrap; }
+.skill-insight-chart-modes button { padding: 5px 10px; }
+.skill-insight-chart-gridline { stroke: var(--background-modifier-border); stroke-width: 1; stroke-dasharray: 3 4; }
+.skill-insight-chart-axis { fill: var(--text-muted); font-size: 11px; font-family: var(--font-interface); }
+.skill-insight-chart-area { fill: url(#si-area-gradient); }
+.skill-insight-chart-bar.use,
+.skill-insight-chart-dot.use { fill: var(--si-accent); }
+.skill-insight-chart-bar.change,
+.skill-insight-chart-dot.change { fill: var(--si-orange); }
+.skill-insight-chart-bar { transition: opacity .15s ease; }
+.skill-insight-chart-bar:hover { opacity: .72; }
+.skill-insight-chart-line { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.skill-insight-chart-line.use { stroke: var(--si-accent); }
+.skill-insight-chart-line.change { stroke: var(--si-orange); }
+.skill-insight-legend { display: flex; gap: 14px; align-items: center; margin-top: 11px; color: var(--text-muted); font-size: 11px; }
+.skill-insight-legend .use { color: var(--si-accent); }
+.skill-insight-legend .change { color: var(--si-orange); }
+.skill-insight-legend small { margin-left: auto; color: var(--text-faint); }
+
+/* ---------- 8 周活动热力图（周列×星期行，点击下钻） + 排行 ---------- */
+.skill-insight-heatmap { display: flex; gap: 4px; width: 100%; max-width: 260px; }
+.skill-insight-heatmap-week { flex: 1 1 0; min-width: 0; display: grid; grid-template-rows: repeat(7, auto); gap: 4px; }
+.skill-insight-heat-note { margin: 10px 0 0; font-size: 10px; }
+.skill-insight-heat { width: 100%; aspect-ratio: 1; border-radius: 4px; background: var(--background-modifier-border); transition: transform .12s ease, box-shadow .12s ease; }
+.skill-insight-heat.level-0 { border: 0; }
+.skill-insight-heat.is-future { opacity: .18; }
+.skill-insight-heat.is-picked { outline: 2px solid var(--si-accent); outline-offset: 1px; }
+.skill-insight-heat:hover { transform: scale(1.18); box-shadow: 0 1px 5px rgb(0 0 0 / 25%); position: relative; z-index: 1; }
+.skill-insight-heat.level-1 { background: color-mix(in srgb, var(--si-accent) 42%, var(--background-secondary)); }
+.skill-insight-heat.level-2 { background: color-mix(in srgb, var(--si-accent) 72%, var(--background-secondary)); }
+.skill-insight-heat.level-3 { background: var(--si-accent); }
+
+.skill-insight-rank { display: flex; gap: 10px; align-items: center; width: 100%; height: auto; min-height: 39px; border: 0; border-bottom: 1px solid var(--background-modifier-border); border-radius: 6px; box-shadow: none; background: transparent; padding: 8px 4px; color: var(--text-normal); text-align: left; font-size: 12px; line-height: 1.35; cursor: pointer; transition: background .15s ease; }
+.skill-insight-rank:hover,
+.skill-insight-event:hover,
+.skill-insight-skill-row:hover,
+.skill-insight-change-event:hover { background: var(--background-modifier-hover); }
+.skill-insight-rank:focus-visible,
+.skill-insight-skill-row:focus-visible { outline: 2px solid var(--si-accent); outline-offset: 2px; }
+.skill-insight-rank-name { flex: 0 1 120px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-insight-rank-track { flex: 1 1 30px; min-width: 25px; height: 6px; border-radius: 4px; background: var(--background-modifier-border); overflow: hidden; }
+.skill-insight-rank-fill { display: block; height: 100%; background: linear-gradient(90deg, color-mix(in srgb, var(--si-accent) 55%, transparent), var(--si-accent)); border-radius: inherit; transition: width .3s ease; }
+.skill-insight-rank strong { flex: 0 0 24px; text-align: right; font-variant-numeric: tabular-nums; }
+.skill-insight-rank-footnote { margin: 12px 2px 0; }
+
+/* ---------- 环形构成图 ---------- */
+.skill-insight-donut-layout { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
+.skill-insight-donut { width: 118px; height: 118px; flex: 0 0 118px; border-radius: 50%; display: grid; place-items: center; background: var(--background-modifier-border); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 5%); }
+.skill-insight-donut-center { width: 84px; height: 84px; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--background-secondary); box-shadow: 0 1px 4px rgb(0 0 0 / 8%); }
+.skill-insight-donut-center strong { font-size: 23px; font-variant-numeric: tabular-nums; }
+.skill-insight-donut-center small { font-size: 10px; color: var(--text-muted); }
+.skill-insight-donut-legend { width: 100%; display: grid; grid-template-columns: 1fr; gap: 8px; }
+.skill-insight-donut-item { display: flex; align-items: center; gap: 8px; justify-content: space-between; min-width: 0; font-size: 11px; padding: 5px 9px; border-radius: 7px; background: color-mix(in srgb, var(--background-primary) 55%, transparent); }
+.skill-insight-donut-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-insight-donut-item strong { color: var(--text-normal); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* ---------- 事件流与徽章 ---------- */
+.skill-insight-event { display: flex; width: 100%; align-items: center; gap: 10px; text-align: left; padding: 10px 8px; border: 0; border-bottom: 1px solid var(--background-modifier-border); border-radius: 6px; box-shadow: none; background: transparent; color: var(--text-normal); font-size: 12px; transition: background .15s ease; }
+.skill-insight-event strong { min-width: 100px; }
+.skill-insight-event-summary { flex: 1; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-insight-event time { color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.skill-insight-badge { padding: 2px 8px; border-radius: 999px; color: var(--si-accent); background: color-mix(in srgb, var(--si-accent) 14%, var(--background-secondary)); white-space: nowrap; font-weight: 600; }
+.skill-insight-badge.change { color: var(--si-orange); background: color-mix(in srgb, var(--si-orange) 14%, var(--background-secondary)); }
+.skill-insight-badge.ok { color: var(--si-green); background: color-mix(in srgb, var(--si-green) 14%, var(--background-secondary)); }
+.skill-insight-badge.warn { color: var(--si-orange); background: color-mix(in srgb, var(--si-orange) 14%, var(--background-secondary)); }
+.skill-insight-badge.fail { color: var(--si-red); background: color-mix(in srgb, var(--si-red) 14%, var(--background-secondary)); }
+.skill-insight-badge.abort { color: var(--text-muted); background: var(--background-modifier-border); }
+.skill-insight-badge.auto { color: var(--si-green); background: color-mix(in srgb, var(--si-green) 14%, var(--background-secondary)); }
+
+/* ---------- 会话转录自动采集 ---------- */
+.skill-insight-transcript-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.skill-insight-transcript-row label { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; min-width: 130px; cursor: pointer; }
+.skill-insight-transcript-row input[type="text"] { flex: 1 1 260px; width: auto; }
+
+/* ---------- 工具栏 / 搜索 / 明细列表 ---------- */
+.skill-insight-toolbar { display: flex; margin-bottom: 14px; }
+.skill-insight-search { width: min(400px, 100%); background: var(--background-secondary); border: 1px solid var(--background-modifier-border); border-radius: 999px; padding: 8px 14px; transition: border-color .15s ease, box-shadow .15s ease; }
+.skill-insight-search:focus { border-color: var(--si-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--si-accent) 18%, transparent); outline: none; }
+.skill-insight-select { border: 1px solid var(--background-modifier-border); background: var(--background-primary); color: var(--text-normal); border-radius: 999px; padding: 8px 12px; font-size: 11px; transition: border-color .15s ease; }
+.skill-insight-select:focus { border-color: var(--si-accent); outline: none; }
+.skill-insight-skills-layout { display: grid; grid-template-columns: minmax(190px, 260px) minmax(0, 1fr); gap: 14px; }
+.skill-insight-skill-list { max-height: 700px; overflow-y: auto; }
+.skill-insight-skill-row { display: flex; flex-direction: column; justify-content: center; gap: 4px; width: 100%; height: auto; min-height: 58px; margin: 0 0 4px; text-align: left; padding: 9px 10px; border: 1px solid transparent; box-shadow: none; border-radius: var(--si-radius-sm); background: transparent; color: var(--text-normal); line-height: 1.35; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
+.skill-insight-skill-row.is-active { background: color-mix(in srgb, var(--si-accent) 14%, var(--background-secondary)); border-color: color-mix(in srgb, var(--si-accent) 35%, transparent); }
+.skill-insight-skill-row strong { display: block; font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
+.skill-insight-skill-row span { display: block; color: var(--text-muted); font-size: 11px; line-height: 1.3; }
+.skill-insight-skill-row-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
+.skill-insight-skill-row-count { flex: none; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--si-accent) 14%, var(--background-secondary)); color: var(--si-accent); font-variant-numeric: tabular-nums; }
+
+/* ---------- 技能详情 ---------- */
+.skill-insight-detail-title { display: flex; justify-content: space-between; align-items: center; }
+.skill-insight-detail-stats { display: grid; grid-template-columns: repeat(4, minmax(90px, 1fr)); gap: 10px; margin-bottom: 13px; }
+.skill-insight-detail-stats > div { display: flex; flex-direction: column; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 9px; padding: 9px 11px; }
+.skill-insight-detail-stats small { color: var(--text-muted); font-size: 10px; }
+.skill-insight-detail-stats strong { font-size: 15px; margin-top: 5px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.skill-insight-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.skill-insight-tags span { font-size: 10px; padding: 4px 9px; border-radius: 999px; background: color-mix(in srgb, var(--si-accent) 10%, var(--background-secondary)); border: 1px solid color-mix(in srgb, var(--si-accent) 18%, transparent); color: var(--text-muted); }
+.skill-insight-version { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 3px; border-bottom: 1px solid var(--background-modifier-border); font-size: 11px; }
+.skill-insight-version strong { flex: 1; }
+.skill-insight-version code { color: var(--text-muted); font-size: 10px; }
+.skill-insight-version-stats { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.skill-insight-version button { border: 0; box-shadow: none; background: transparent; color: var(--si-accent); padding: 3px 6px; font-size: 11px; border-radius: 6px; transition: background .15s ease; }
+.skill-insight-version button:hover { background: color-mix(in srgb, var(--si-accent) 12%, transparent); }
+.skill-insight-snapshot { margin-top: 12px; padding: 12px; border-radius: var(--si-radius-sm); border: 1px solid var(--background-modifier-border); background: var(--background-primary); }
+.skill-insight-snapshot pre { max-height: 360px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; margin: 8px 0 0; }
+.skill-insight-diff { max-height: 420px; overflow: auto; margin-top: 8px; font-family: var(--font-monospace); font-size: 11px; white-space: pre; border-radius: 6px; }
+.skill-insight-diff-line { padding: 1px 6px; border-radius: 3px; }
+.skill-insight-diff-line.added { color: var(--si-green); background: color-mix(in srgb, var(--si-green) 11%, var(--background-primary)); }
+.skill-insight-diff-line.removed { color: var(--text-error); background: color-mix(in srgb, var(--text-error) 9%, var(--background-primary)); }
+
+/* ---------- 迭代时间线 ---------- */
+.skill-insight-change-event { display: flex; flex-direction: column; align-items: flex-start; width: 100%; gap: 4px; border: 0; border-left: 2px solid var(--si-orange); border-radius: 0 8px 8px 0; box-shadow: none; background: transparent; color: var(--text-normal); padding: 11px 14px; margin: 0 0 6px 4px; text-align: left; transition: background .15s ease; }
+.skill-insight-change-event time,
+.skill-insight-change-event small { color: var(--text-muted); }
+
+/* ---------- 发现技能 ---------- */
+.skill-insight-discovery { max-width: 820px; }
+.skill-insight-discovery-label { display: flex; flex-direction: column; gap: 8px; font-size: 12px; font-weight: 600; margin: 18px 0 10px; }
+.skill-insight-discovery-input { width: 100%; min-height: 100px; resize: vertical; border: 1px solid var(--background-modifier-border); border-radius: var(--si-radius-sm); padding: 10px; background: var(--background-primary); color: var(--text-normal); font: 12px/1.5 var(--font-monospace); transition: border-color .15s ease, box-shadow .15s ease; }
+.skill-insight-discovery-input:focus { border-color: var(--si-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--si-accent) 18%, transparent); outline: none; }
+.skill-insight-discovery-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+.skill-insight-discovery-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 8px; max-height: 360px; overflow: auto; margin: 14px 0; }
+.skill-insight-discovery-row { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 10px 12px; border: 1px solid var(--background-modifier-border); border-radius: var(--si-radius-sm); background: var(--background-primary); transition: border-color .15s ease, box-shadow .15s ease; }
+.skill-insight-discovery-row:hover { border-color: color-mix(in srgb, var(--si-accent) 40%, var(--background-modifier-border)); box-shadow: var(--si-shadow); }
+.skill-insight-discovery-row > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.skill-insight-discovery-row strong { font-size: 12px; }
+.skill-insight-discovery-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font-size: 10px; }
+.skill-insight-discovery-row em { margin-left: auto; white-space: nowrap; color: var(--si-green); font-size: 10px; font-style: normal; font-weight: 600; }
+
+/* ---------- 记录面板 ---------- */
+.skill-insight-recording { margin: 12px 0 18px; padding: 4px 14px; border: 1px solid var(--background-modifier-border); border-radius: var(--si-radius-sm); background: color-mix(in srgb, var(--background-primary) 60%, var(--background-secondary)); }
+.skill-insight-recording summary { cursor: pointer; font-size: 12px; font-weight: 700; padding: 9px 0; user-select: none; }
+.skill-insight-recording-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px dashed var(--background-modifier-border); }
+.skill-insight-recording-form strong { width: 100%; font-size: 11px; }
+.skill-insight-recording-form input { flex: 1 1 180px; min-width: 0; }
+
+/* ---------- 页脚 ---------- */
+.skill-insight-footer { color: var(--text-faint); font-size: 10px; text-align: center; padding: 14px 0 4px; }
+
+/* ---------- 滚动条 ---------- */
+.skill-insight-skill-list,
+.skill-insight-snapshot pre,
+.skill-insight-diff,
+.skill-insight-discovery-list { scrollbar-width: thin; scrollbar-color: var(--background-modifier-border) transparent; }
+.skill-insight-skill-list::-webkit-scrollbar,
+.skill-insight-snapshot pre::-webkit-scrollbar,
+.skill-insight-diff::-webkit-scrollbar,
+.skill-insight-discovery-list::-webkit-scrollbar { width: 8px; height: 8px; }
+.skill-insight-skill-list::-webkit-scrollbar-thumb,
+.skill-insight-snapshot pre::-webkit-scrollbar-thumb,
+.skill-insight-diff::-webkit-scrollbar-thumb,
+.skill-insight-discovery-list::-webkit-scrollbar-thumb { background: var(--background-modifier-border); border-radius: 4px; }
+
+/* ---------- 响应式 ---------- */
+@container skill-insight (max-width: 1100px) { .skill-insight-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .skill-insight-hero { grid-template-columns: 1fr; } .skill-insight-compositions { grid-template-columns: repeat(2, minmax(0, 1fr)); } .skill-insight-detail-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container skill-insight (max-width: 720px) { .skill-insight-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .skill-insight-donut-legend { grid-template-columns: 1fr; } .skill-insight-skills-layout { grid-template-columns: 1fr; } .skill-insight-skill-list { max-height: 260px; } }
+@container skill-insight (max-width: 620px) { .skill-insight-compositions { grid-template-columns: 1fr; } .skill-insight-compositions .skill-insight-panel { min-height: 0; } }
+@container skill-insight (max-width: 520px) { .skill-insight-donut-layout { flex-direction: column; align-items: flex-start; } .skill-insight-donut-legend { width: 100%; } }
+@media (max-width: 560px) { .skill-insight-root { padding: 14px; } }
+
+/* ---------- 动效偏好 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .skill-insight-root *,
+  .skill-insight-root *::before,
+  .skill-insight-root *::after { transition: none !important; animation: none !important; }
+}
