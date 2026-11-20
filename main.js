@@ -930,7 +930,11 @@ class SkillInsightSettingTab extends PluginSettingTab {
     el(root, 'p', 'skill-insight-muted', '把 AI agent 会话里技能的使用与迭代整理成本地看板。所有数据保存在插件目录的 data.json，不写入 vault，也不发起任何网络请求。');
     const open = el(root, 'div', 'skill-insight-discovery-actions');
     const viewBtn = el(open, 'button', 'skill-insight-pill is-active', '打开看板');
-    viewBtn.addEventListener('click', () => this.plugin.activateView());
+    viewBtn.addEventListener('click', () => {
+      // 设置页是模态弹层：先关闭再 reveal，否则焦点切不到工作区叶子
+      if (this.app.setting && typeof this.app.setting.close === 'function') this.app.setting.close();
+      this.plugin.activateView();
+    });
 
     const box = el(root, 'section', 'skill-insight-panel skill-insight-transcript');
     el(box, 'h2', '', '会话转录自动采集');
@@ -1401,4 +1405,5 @@ module.exports = class SkillInsightPlugin extends Plugin {
   }
 };
 
+/* nosourcemap */
 /* nosourcemap */
