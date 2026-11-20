@@ -38,7 +38,7 @@ jobs:
       - name: Generate build provenance attestations
         uses: actions/attest-build-provenance@v2
         with:
-          subject_path: release/main.js, release/manifest.json, release/styles.css
+          subject-path: release/*
 
       - name: Upload to GitHub release
         uses: softprops/action-gh-release@v2
