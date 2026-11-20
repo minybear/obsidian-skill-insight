@@ -689,8 +689,8 @@ class SkillInsightView extends ItemView {
         session,
         items,
         skills: countsBy(items, i => i.skill_id),
-        agents: [...new Set(items.map(i => String(i.source || '').replace(/^转录自动 · /u, '')))
-          .filter(a => a && a !== '看板手动记录' && a !== '显式记录')],
+        agents: [...new Set(items.map(i => String(i.source || '').replace(/^转录自动 · /u, '')))]
+          .filter(a => a && a !== '看板手动记录' && a !== '显式记录'),
         first: items.map(i => String(i.time)).sort()[0],
         last: items.map(i => String(i.time)).sort().pop(),
       }))
