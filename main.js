@@ -220,6 +220,7 @@ class SkillInsightView extends ItemView {
     this.collectMessage = '';
     this.filter = { skill: '', day: '' }; // 下钻筛选：点排行/热力图/技能 chip 生效
     this.sessionQuery = '';
+    this.pending = new Map(); // 未登记变更草稿：refresh 时自动检测，纯内存不落库
   }
 
   getViewType() { return VIEW; }
@@ -257,6 +258,7 @@ class SkillInsightView extends ItemView {
     data.uses.sort((a, b) => String(b.time).localeCompare(String(a.time)));
     data.changes.sort((a, b) => String(b.time).localeCompare(String(a.time)));
     this.data = data;
+    try { this.pending = await this.plugin.detectPendingChanges(); } catch { this.pending = new Map(); }
     this.render();
   }
 
@@ -422,6 +424,13 @@ class SkillInsightView extends ItemView {
 
   renderOverview(root) {
     const { uses, changes } = this.filtered();
+    if (this.pending.size) {
+      // 未登记变更提示条：自动检测的 SKILL.md 变更，引导到技能明细确认登记
+      const strip = el(root, 'div', 'skill-insight-pending-strip');
+      el(strip, 'span', '', `⚠ ${this.pending.size} 个技能存在未登记变更：${[...this.pending.keys()].join('、')}`);
+      const go = el(strip, 'button', '', '去处理');
+      go.addEventListener('click', () => { this.tab = 'skills'; this.selected = [...this.pending.keys()][0]; this.render(); });
+    }
     const used = new Set(uses.map(item => item.skill_id));
     const revise = this.data.cards.filter(item => item.maintenance === '优先修订').length;
     const kpis = el(root, 'div', 'skill-insight-kpis');
@@ -773,6 +782,7 @@ class SkillInsightView extends ItemView {
     const tags = el(box, 'div', 'skill-insight-tags');
     for (const value of [card.category, card.focus, card.maintenance, card.capability]) el(tags, 'span', '', value || '未标注');
     el(box, 'p', 'skill-insight-muted', `源码：${card.source_path || '未登记'}`);
+    if (this.pending.has(card.skill_id)) this.renderPendingDraft(box, card);
     if (!uses.length) el(box, 'p', 'skill-insight-muted', '尚无使用记录。');
     this.renderRecording(box, card);
     el(box, 'h3', '', '版本与迭代');
@@ -815,6 +825,27 @@ class SkillInsightView extends ItemView {
       el(line, 'time', '', shortDate(event.time));
       line.title = event.task || '';
     }
+  }
+
+  // 待确认变更草稿：自动检测的 SKILL.md 变更 + 差异预览，确认仍走「登记新版本」人工流程
+  renderPendingDraft(box, card) {
+    const info = this.pending.get(card.skill_id);
+    const draft = el(box, 'div', 'skill-insight-pending');
+    const head = el(draft, 'div', 'skill-insight-pending-head');
+    el(head, 'strong', '', `检测到未登记变更（自 ${info.revision} 之后）`);
+    const toggle = el(head, 'button', '', '查看差异');
+    el(draft, 'small', '', `当前哈希 ${String(info.hash).slice(0, 12)} · 基线 ${info.revision} · 检测于 ${shortDate(info.detectedAt)}`);
+    let diffBox = null;
+    toggle.addEventListener('click', async () => {
+      if (diffBox) { diffBox.remove(); diffBox = null; toggle.textContent = '查看差异'; return; }
+      const detail = await this.plugin.pendingDiff(card);
+      if (!detail) { new Notice('无法读取差异（缺少基线快照）'); return; }
+      const lines = detail.diff.filter(([tag]) => tag !== ' ').slice(0, 60);
+      diffBox = el(draft, 'pre', 'skill-insight-diff-lines');
+      el(diffBox, '', '', lines.map(([tag, text]) => `${tag === '+' ? '+ ' : '- '}${text}`).join('\n') || '（无文本差异）');
+      toggle.textContent = '收起差异';
+    });
+    el(draft, 'p', 'skill-insight-muted', '在下方「技能迭代」填写修改原因与验证结果，点「登记新版本」即把当前内容登记为新版本；若属误改可直接还原文件，本提示会自动消失。');
   }
 
   renderRecording(box, card) {
@@ -1151,6 +1182,37 @@ module.exports = class SkillInsightPlugin extends Plugin {
     const stamp = new Date().toISOString().replace(/[-:]/gu, '').replace('T', '-').replace(/\..*$/u, '');
     const nonce = require('node:crypto').randomBytes(4).toString('hex');
     return `${kind}-${stamp}-${nonce}`;
+  }
+
+  // 待确认草稿：刷新时自动比对 SKILL.md 哈希与最近已登记版本，检出「未登记变更」。
+  // 只检测不登记——版本语义（原因/验证结果）仍由人工确认，迭代时间线不失真；
+  // 纯内存计算不落库，文件回滚则草稿自动消失。
+  async detectPendingChanges() {
+    const crypto = require('node:crypto');
+    const pending = new Map();
+    for (const card of this.store.cards) {
+      try {
+        const content = await this.readSource(card);
+        const hash = crypto.createHash('sha256').update(content, 'utf8').digest('hex');
+        const state = await this.latestState(card);
+        if (state.hash && hash !== state.hash) {
+          pending.set(card.skill_id, { hash, revision: state.revision, detectedAt: new Date().toISOString() });
+        }
+      } catch {
+        // 读不到源码（路径失效等）不视为变更
+      }
+    }
+    return pending;
+  }
+
+  // 待确认草稿的差异预览：最近登记快照 vs 当前 SKILL.md
+  async pendingDiff(card) {
+    const state = await this.latestState(card);
+    const before = this.store.snapshots?.[card.skill_id]?.[state.revision];
+    if (typeof before !== 'string') return null;
+    let current;
+    try { current = await this.readSource(card); } catch { return null; }
+    return { revision: state.revision, diff: diffLines(before, current) };
   }
 
   async recordUse(card, task, result) {

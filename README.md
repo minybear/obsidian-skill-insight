@@ -16,6 +16,8 @@ A desktop-only [Obsidian](https://obsidian.md) plugin that turns your AI agent s
   - **Revision timeline** — how your skills changed over time (r0, r1, r2 …).
   - **Sources & ingest** — read-only discovery report and ingest controls.
 
+- **Pending change detection** — on every dashboard refresh, the plugin hashes each tracked skill's `SKILL.md` against the latest registered revision. Unregistered changes surface as a yellow draft (overview strip + skill detail) with a diff preview; they only become a numbered revision (r1, r2, …) after you fill in the change reason and verification result. Reverting the file clears the draft automatically.
+
 - **Settings tab** — a settings entry in Obsidian's community-plugins list, with a dashboard shortcut and transcript ingest configuration (global fallback toggles and roots).
 
 ## Privacy & data safety

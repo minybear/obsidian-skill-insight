@@ -279,6 +279,15 @@
 @container skill-insight (max-width: 520px) { .skill-insight-donut-layout { flex-direction: column; align-items: flex-start; } .skill-insight-donut-legend { width: 100%; } }
 @media (max-width: 560px) { .skill-insight-root { padding: 14px; } }
 
+/* ---------- 未登记变更草稿 ---------- */
+.skill-insight-pending-strip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; padding: 10px 14px; border: 1px solid var(--background-modifier-border); border-left: 3px solid var(--color-yellow, #e0ac00); border-radius: 8px; background: var(--background-secondary); font-size: 13px; }
+.skill-insight-pending-strip button { flex: none; }
+.skill-insight-pending { margin: 10px 0 4px; padding: 10px 14px; border: 1px solid var(--background-modifier-border); border-left: 3px solid var(--color-yellow, #e0ac00); border-radius: 8px; background: var(--background-secondary); }
+.skill-insight-pending-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.skill-insight-pending small { display: block; margin-top: 4px; color: var(--text-muted); font-size: 12px; }
+.skill-insight-pending p { margin: 8px 0 0; font-size: 12px; }
+.skill-insight-diff-lines { margin: 10px 0 0; max-height: 320px; overflow: auto; padding: 10px; border-radius: 6px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); font-family: var(--font-monospace, monospace); font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+
 /* ---------- 动效偏好 ---------- */
 @media (prefers-reduced-motion: reduce) {
   .skill-insight-root *,
