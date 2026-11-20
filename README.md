@@ -7,8 +7,8 @@ A desktop-only [Obsidian](https://obsidian.md) plugin that turns your AI agent s
 ## What it does
 
 - **Auto-initialization** — on startup the plugin scans your configured skill directories (`.agents/skills`, `.claude/skills`, `.codex/skills` in your vault) and creates a dashboard card for every installed skill, with no confirmation dialogs.
-- **Usage mining from session transcripts** — on first open it back-fills usage records from the last 7 days of local agent session transcripts (Codex CLI, Claude Code). After that, it ingests new transcript lines incrementally each time the dashboard opens.
-- **Signal detection** — counts explicit `Skill` tool calls, plus commands that target exactly one skill path. Directory listings, file dumps and chat prose are deliberately ignored to avoid false positives.
+- **Usage mining from session transcripts** — on first open it back-fills usage records from the last 7 days of local agent session transcripts (Codex CLI, Claude Code); new skills get their history re-scanned, so usage that happened before the card existed is counted retroactively. After that, it ingests new transcript lines incrementally each time the dashboard opens.
+- **Signal detection** — counts explicit `Skill` tool calls, plus commands that directly read `SKILL.md` files (each distinct skill counted once per session). Patch-write operations and scripted bulk scans (6+ skill paths in one command) are ignored; directory listings, command outputs and chat prose never participate in matching.
 - **Insight dashboard** with five tabs:
   - **Overview** — usage ranking, an 8-week activity heatmap (click a cell to drill into that day), session volume, and revision activity.
   - **Skill detail** — per-skill timeline of usage and revisions.

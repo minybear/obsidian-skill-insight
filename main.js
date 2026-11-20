@@ -8,7 +8,7 @@ const DEFAULT_SOURCES = ['.agents/skills', '.claude/skills', '.codex/skills'];
 const DAY = 86400000;
 const TRANSCRIPT_AGENTS = [['codex', 'Codex'], ['claude', 'Claude Code']];
 const SKILL_PATH_RE = /skills[/\\]([^/\\]+)[/\\]SKILL\.md/giu;
-const INGEST_VERSION = 5; // 口径升级时清空旧自动记录重采（v5：会话范围收窄为 Claudian 注册表）
+const INGEST_VERSION = 6; // 口径升级时清空旧自动记录重采（v6：命令多技能路径读取各计 1 次，不再视为批量丢弃）
 
 // Claudian 后端 providerId → 采集 agent 归一化
 function claudianProvider(value) {
@@ -1278,20 +1278,21 @@ module.exports = class SkillInsightPlugin extends Plugin {
             if (known.has(id)) records.push({ skillId: id, explicit: true });
           }
           if (!records.length) {
-            // 层2：只认「命令中定向读取单个技能」。批量读取（≥2 个技能路径）、
-            // 补丁写操作（Add/Update/Delete File:）一律不计；输出与正文根本不参与匹配。
+            // 层2：命令中定向读取 SKILL.md 即为使用信号——一条命令出现多个技能路径
+            // 各计 1 次（会话内去重）；补丁写操作（Add/Update/Delete File:）不计；
+            // 单条命令出现 ≥6 个技能路径视为脚本化批量扫描，整条忽略。输出与正文不参与匹配。
             const cmdText = commandTextsOf(line).join('\n');
             if (cmdText) {
-              const occurrences = [];
+              const reads = new Set();
               for (const match of cmdText.matchAll(SKILL_PATH_RE)) {
                 const id = match[1];
                 if (!known.has(id)) continue;
                 const before = cmdText.slice(Math.max(0, match.index - 40), match.index);
-                const isPatchWrite = /(Add|Update|Delete) File:\s*\S*$/u.test(before);
-                occurrences.push({ id, skip: isPatchWrite });
+                if (/(Add|Update|Delete) File:\s*\S*$/u.test(before)) continue;
+                reads.add(id);
               }
-              if (occurrences.length === 1 && !occurrences[0].skip) {
-                records.push({ skillId: occurrences[0].id, explicit: false });
+              if (reads.size && reads.size < 6) {
+                for (const id of reads) records.push({ skillId: id, explicit: false });
               }
             }
           }
@@ -1319,7 +1320,7 @@ module.exports = class SkillInsightPlugin extends Plugin {
             revision: latestRevision(this.store, item.skillId),
             skill_sha256: '',
             result: '未标结果',
-            task: item.explicit ? '转录信号 · Skill 工具调用' : '转录信号 · 定向读取 SKILL.md（按会话计 1 次，批量/清单/文档引用不计）',
+            task: item.explicit ? '转录信号 · Skill 工具调用' : '转录信号 · 命令定向读取 SKILL.md（按会话每技能计 1 次，补丁写与大批量扫描不计）',
             artifact: '',
             session: sessionId.slice(0, 64),
             source: `转录自动 · ${agent}`,
