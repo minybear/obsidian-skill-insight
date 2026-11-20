@@ -16,6 +16,8 @@ A desktop-only [Obsidian](https://obsidian.md) plugin that turns your AI agent s
   - **Revision timeline** — how your skills changed over time (r0, r1, r2 …).
   - **Sources & ingest** — read-only discovery report and ingest controls.
 
+- **Settings tab** — a settings entry in Obsidian's community-plugins list, with a dashboard shortcut and transcript ingest configuration (global fallback toggles and roots).
+
 ## Privacy & data safety
 
 - **No vault writes.** All plugin data lives inside the plugin's own folder (`data.json` in `.obsidian/plugins/skill-insight/`). Your notes are never touched.

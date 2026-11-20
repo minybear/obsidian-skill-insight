@@ -1,4 +1,4 @@
-const { ItemView, Plugin, Notice, parseYaml, normalizePath } = require('obsidian');
+const { ItemView, Plugin, PluginSettingTab, Notice, parseYaml, normalizePath } = require('obsidian');
 
 const VIEW = 'skill-insight-view';
 const LEGACY_ROOT = '4-运转中心/技能治理/';
@@ -915,6 +915,58 @@ class SkillInsightView extends ItemView {
 
 }
 
+// 设置页：让插件出现在「第三方插件」侧栏，并提供看板入口与采集配置
+class SkillInsightSettingTab extends PluginSettingTab {
+  constructor(app, plugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display() {
+    const root = this.containerEl;
+    root.empty();
+    root.addClass('skill-insight-root');
+    el(root, 'h2', '', 'Skill 洞察');
+    el(root, 'p', 'skill-insight-muted', '把 AI agent 会话里技能的使用与迭代整理成本地看板。所有数据保存在插件目录的 data.json，不写入 vault，也不发起任何网络请求。');
+    const open = el(root, 'div', 'skill-insight-discovery-actions');
+    const viewBtn = el(open, 'button', 'skill-insight-pill is-active', '打开看板');
+    viewBtn.addEventListener('click', () => this.plugin.activateView());
+
+    const box = el(root, 'section', 'skill-insight-panel skill-insight-transcript');
+    el(box, 'h2', '', '会话转录自动采集');
+    el(box, 'p', 'skill-insight-muted', '打开看板时自动读取 Claudian 会话注册表（.claudian/sessions），解析本 vault 发起的 agent 会话转录补记使用。显式 Skill 工具调用逐次计数；命令定向读取 SKILL.md 按会话每技能计 1 次。补丁写操作、大批量扫描、命令输出与聊天正文不计。首次安装只回扫近 7 天历史，之后按字节偏移增量采集；新技能建卡时自动回扫补录。');
+    const inputs = {};
+    for (const [agent, label] of TRANSCRIPT_AGENTS) {
+      const config = this.plugin.settings.transcripts?.[agent] || { globalScan: false, root: '' };
+      const row = el(box, 'div', 'skill-insight-transcript-row');
+      const toggle = el(row, 'label', '');
+      const check = el(toggle, 'input', '');
+      check.type = 'checkbox';
+      check.checked = config.globalScan;
+      el(toggle, 'span', '', `${label} 全局兜底`);
+      const input = el(row, 'input', 'skill-insight-search');
+      input.type = 'text';
+      input.placeholder = `全局转录根目录（默认 ${defaultTranscriptRoot(agent)}）`;
+      input.value = config.root;
+      inputs[agent] = { check, input };
+    }
+    const actions = el(box, 'div', 'skill-insight-discovery-actions');
+    const save = el(actions, 'button', 'skill-insight-pill is-active', '保存采集设置');
+    save.addEventListener('click', async () => {
+      try {
+        for (const [agent, pair] of Object.entries(inputs)) {
+          await this.plugin.setTranscriptConfig(agent, { globalScan: pair.check.checked, root: pair.input.value });
+        }
+        new Notice('采集设置已保存');
+        this.display();
+      } catch (error) {
+        new Notice(`保存采集设置失败：${error.message}`);
+      }
+    });
+    el(box, 'p', 'skill-insight-muted', '立即采集、来源报告与迭代记账请打开看板的「来源与采集」页。');
+  }
+}
+
 module.exports = class SkillInsightPlugin extends Plugin {
   async onload() {
     const saved = await this.loadData() || {};
@@ -933,6 +985,7 @@ module.exports = class SkillInsightPlugin extends Plugin {
     this.registerView(VIEW, leaf => new SkillInsightView(leaf, this));
     this.addRibbonIcon('activity', '打开 Skill 洞察', () => this.activateView());
     this.addCommand({ id: 'open-skill-insight', name: '打开 Skill 洞察看板', callback: () => this.activateView() });
+    this.addSettingTab(new SkillInsightSettingTab(this.app, this));
     // 全自动初始化：扫描已装技能直接建卡建 r0 快照（幂等，已建卡的跳过）
     this.initPromise = this.autoInitialize();
   }
@@ -1347,3 +1400,5 @@ module.exports = class SkillInsightPlugin extends Plugin {
     await this.app.workspace.revealLeaf(leaf);
   }
 };
+
+/* nosourcemap */
