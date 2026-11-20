@@ -228,8 +228,10 @@ class SkillInsightView extends ItemView {
 
   async onOpen() {
     if (this.plugin.initPromise) await this.plugin.initPromise; // 等待全自动初始化完成
+    const fresh = await this.plugin.autoInitialize(); // 幂等重扫：运行期间新装的技能打开看板即建卡，不必等重启
     await this.refresh();
     if (!this.data.cards.length) { await this.scanSources(); return; }
+    if (fresh) this.plugin.pendingRescan = true; // 有新建卡：回扫历史转录，补计未建卡期间的用量
     await this.autoCollect(false);
   }
 
@@ -950,8 +952,10 @@ module.exports = class SkillInsightPlugin extends Plugin {
       const seen = new Set();
       const fresh = found.filter(item => !existing.has(item.skill_id) && !seen.has(item.skill_id) && seen.add(item.skill_id));
       if (fresh.length) await this.initializeSkills(fresh);
+      return fresh.length;
     } catch (error) {
       console.error('[skill-insight] 自动初始化失败', error);
+      return 0;
     }
   }
 
@@ -1174,14 +1178,21 @@ module.exports = class SkillInsightPlugin extends Plugin {
     if (!this.store.ingest || typeof this.store.ingest !== 'object') this.store.ingest = { offsets: {} };
     if (!this.store.ingest.offsets || typeof this.store.ingest.offsets !== 'object') this.store.ingest.offsets = {};
     const offsets = this.store.ingest.offsets;
+    // 建卡后回扫：新建技能卡时清空游标全量重读，靠 auto_key 确定性去重，只补漏不重复
+    let rescanNote = '';
+    if (this.pendingRescan) {
+      this.pendingRescan = false;
+      if (Object.keys(offsets).length) rescanNote = '检测到新建技能卡，已回扫历史转录补计未建卡期间的用量。';
+      for (const key of Object.keys(offsets)) delete offsets[key];
+    }
     // 采集口径升级（INGEST_VERSION）时一次性清理旧自动记录，从零重采
     if ((this.store.ingest.version || 1) < INGEST_VERSION) {
       this.store.uses = this.store.uses.filter(use => !(typeof use.auto_key === 'string' && /^auto[xs]?:/.test(use.auto_key)));
       for (const key of Object.keys(offsets)) delete offsets[key];
       this.store.ingest.version = INGEST_VERSION;
     }
-    // 首次采集（或口径清零后）只回扫近 7 天历史对话
-    const firstScan = Object.keys(offsets).length === 0;
+    // 首次采集（或口径清零后）只回扫近 7 天历史对话；建卡触发的回扫不限时间，历史用量由去重兜底
+    const firstScan = Object.keys(offsets).length === 0 && !this.store.ingest.everScanned;
     const windowStart = firstScan ? Date.now() - 7 * DAY : 0;
     const autoKeys = new Set(this.store.uses.map(use => use.auto_key).filter(Boolean));
     const reports = [];
@@ -1315,12 +1326,14 @@ module.exports = class SkillInsightPlugin extends Plugin {
           });
           agentAdded++;
         }
-        offsets[file] = cursor;
+        if (known.size) offsets[file] = cursor; // 一张卡都没有时不推进游标：首次建卡后可全量补采，不丢空白期
       }
       added += agentAdded;
       reports.push(`${agent}:注册表 ${entries.length} 会话（${archived} 个压缩归档跳过）· 本 vault 命中 ${files.size} 个转录 · 新增 ${agentAdded} 条${config.globalScan ? '（含全局兜底）' : ''}`);
     }
-    if (added) await this.persist();
+    this.store.ingest.everScanned = true; // 区分「首扫限 7 天」与「回扫不限时」
+    if (rescanNote) reports.push(rescanNote);
+    await this.persist(); // 游标/回扫标记每次落盘，避免 refreshStore 从磁盘回读后丢状态
     return { added, reports, firstScan };
   }
 

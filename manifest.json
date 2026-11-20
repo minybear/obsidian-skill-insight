@@ -1,7 +1,7 @@
 {
   "id": "skill-insight",
   "name": "Skill Insight",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "minAppVersion": "1.13.0",
   "description": "Auto-detects installed skills, mines recent agent session transcripts for skill usage, and visualizes usage, sessions, and revisions.",
   "author": "Awei",
