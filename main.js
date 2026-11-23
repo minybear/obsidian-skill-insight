@@ -8,7 +8,7 @@ const DEFAULT_SOURCES = ['.agents/skills', '.claude/skills', '.codex/skills'];
 const DAY = 86400000;
 const TRANSCRIPT_AGENTS = [['codex', 'Codex'], ['claude', 'Claude Code']];
 const SKILL_PATH_RE = /skills[/\\]([^/\\]+)[/\\]SKILL\.md/giu;
-const INGEST_VERSION = 6; // 口径升级时清空旧自动记录重采（v6：命令多技能路径读取各计 1 次，不再视为批量丢弃）
+const INGEST_VERSION = 7; // 口径升级时清空旧自动记录重采（v7：用户消息 $技能 调用逐次计数，路径读取信号仅作兜底）
 
 // Claudian 后端 providerId → 采集 agent 归一化
 function claudianProvider(value) {
@@ -120,6 +120,26 @@ function commandTextsOf(line, out = []) {
   }
   return toolUseCommandTexts(line, out);
 }
+
+// 只取「用户发言」文本（层3 $技能调用信号的来源），按 agent 严格分流：
+// codex 取 response_item 的 user message；claude 取 user turn。
+// 排除工具结果回填、系统注入（isMeta）、子代理侧链（非用户本人发言）。
+function userMessageTexts(line, agent, out = []) {
+  if (agent === 'codex' && line.type === 'response_item' && line.payload?.type === 'message' && line.payload?.role === 'user') {
+    const content = line.payload.content;
+    if (Array.isArray(content)) for (const item of content) if (item && typeof item.text === 'string') out.push(item.text);
+  }
+  if (agent === 'claude' && line.type === 'user' && !line.isMeta && !line.isSideChain) {
+    const content = line.message?.content;
+    if (typeof content === 'string') out.push(content);
+    else if (Array.isArray(content) && !content.some(item => item && item.type === 'tool_result')) {
+      for (const item of content) if (item && item.type === 'text' && typeof item.text === 'string') out.push(item.text);
+    }
+  }
+  return out;
+}
+
+const MENTION_RE = /\$([A-Za-z0-9][A-Za-z0-9_-]*)/gu;
 
 function vaultSource(value) {
   const source = value.replace(/\\/g, '/').trim().replace(/^\/+|\/+$/g, '');
@@ -1306,7 +1326,7 @@ module.exports = class SkillInsightPlugin extends Plugin {
     }
     // 采集口径升级（INGEST_VERSION）时一次性清理旧自动记录，从零重采
     if ((this.store.ingest.version || 1) < INGEST_VERSION) {
-      this.store.uses = this.store.uses.filter(use => !(typeof use.auto_key === 'string' && /^auto[xs]?:/.test(use.auto_key)));
+      this.store.uses = this.store.uses.filter(use => !(typeof use.auto_key === 'string' && /^auto[xsu]?:/.test(use.auto_key)));
       for (const key of Object.keys(offsets)) delete offsets[key];
       this.store.ingest.version = INGEST_VERSION;
     }
@@ -1391,13 +1411,21 @@ module.exports = class SkillInsightPlugin extends Plugin {
           const time = Number.isNaN(parsed.getTime()) ? mtime : parsed.toISOString();
           if (!known.size) continue;
           const inWindow = !firstScan || new Date(time).getTime() >= windowStart; // 首扫只认近 7 天
-          const records = []; // {skillId, explicit}
+          const records = []; // {skillId, kind: 'explicit'|'mention'|'read'}
           for (const hint of findSkillToolCalls(line)) {
             const id = normalizeSkillHint(hint);
-            if (known.has(id)) records.push({ skillId: id, explicit: true });
+            if (known.has(id)) records.push({ skillId: id, kind: 'explicit' });
+          }
+          // 层3：用户消息中的 $技能 调用指令——每条消息每技能计 1 次调用，逐消息累加
+          for (const text of userMessageTexts(line, agent)) {
+            const mentioned = new Set();
+            for (const match of text.matchAll(MENTION_RE)) {
+              if (known.has(match[1])) mentioned.add(match[1]);
+            }
+            for (const id of mentioned) records.push({ skillId: id, kind: 'mention' });
           }
           if (!records.length) {
-            // 层2：命令中定向读取 SKILL.md 即为使用信号——一条命令出现多个技能路径
+            // 层2（兜底）：命令中定向读取 SKILL.md 即为使用信号——一条命令出现多个技能路径
             // 各计 1 次（会话内去重）；补丁写操作（Add/Update/Delete File:）不计；
             // 单条命令出现 ≥6 个技能路径视为脚本化批量扫描，整条忽略。输出与正文不参与匹配。
             const cmdText = commandTextsOf(line).join('\n');
@@ -1411,23 +1439,26 @@ module.exports = class SkillInsightPlugin extends Plugin {
                 reads.add(id);
               }
               if (reads.size && reads.size < 6) {
-                for (const id of reads) records.push({ skillId: id, explicit: false });
+                for (const id of reads) records.push({ skillId: id, kind: 'read' });
               }
             }
           }
           if (!inWindow) continue;
-          for (const { skillId, explicit } of records) {
-            // 显式调用逐次计数（autox:）；路径信号按会话计 1 次（autos:）
-            if (!explicit && recorded.has(skillId)) continue;
-            if (!explicit) recorded.add(skillId);
-            fileRecords.push({ skillId, explicit, time, lineStart });
+          for (const { skillId, kind } of records) {
+            if (kind === 'read' && recorded.has(skillId)) continue;
+            if (kind === 'read') recorded.add(skillId);
+            fileRecords.push({ skillId, kind, time, lineStart });
           }
         }
-        // 跨层去重：会话内技能已有显式调用时，其路径读取信号让位（读取多半是调用的伴生动作）
-        const explicitSkills = new Set(fileRecords.filter(item => item.explicit).map(item => item.skillId));
+        // 跨层去重：显式调用 > $调用 > 路径读取——伴生动作让位，同一次调用只记最强信号
+        const explicitSkills = new Set(fileRecords.filter(item => item.kind === 'explicit').map(item => item.skillId));
+        const mentionSkills = new Set(fileRecords.filter(item => item.kind === 'mention').map(item => item.skillId));
         for (const item of fileRecords) {
-          if (!item.explicit && explicitSkills.has(item.skillId)) continue;
-          const autoKey = item.explicit ? `autox:${file}:${item.lineStart}` : `autos:${file}:${item.skillId}`;
+          if (item.kind === 'read' && (explicitSkills.has(item.skillId) || mentionSkills.has(item.skillId))) continue;
+          if (item.kind === 'mention' && explicitSkills.has(item.skillId)) continue;
+          const autoKey = item.kind === 'explicit' ? `autox:${file}:${item.lineStart}`
+            : item.kind === 'mention' ? `autou:${file}:${item.lineStart}:${item.skillId}`
+            : `autos:${file}:${item.skillId}`;
           if (autoKeys.has(autoKey)) continue;
           autoKeys.add(autoKey);
           this.store.uses.push({
@@ -1439,7 +1470,9 @@ module.exports = class SkillInsightPlugin extends Plugin {
             revision: latestRevision(this.store, item.skillId),
             skill_sha256: '',
             result: '未标结果',
-            task: item.explicit ? '转录信号 · Skill 工具调用' : '转录信号 · 命令定向读取 SKILL.md（按会话每技能计 1 次，补丁写与大批量扫描不计）',
+            task: item.kind === 'explicit' ? '转录信号 · Skill 工具调用'
+              : item.kind === 'mention' ? '转录信号 · 用户消息 $技能 调用（逐次计数）'
+              : '转录信号 · 命令定向读取 SKILL.md（兜底：伴生读取让位，补丁写与大批量扫描不计）',
             artifact: '',
             session: sessionId.slice(0, 64),
             source: `转录自动 · ${agent}`,
@@ -1467,5 +1500,6 @@ module.exports = class SkillInsightPlugin extends Plugin {
   }
 };
 
+/* nosourcemap */
 /* nosourcemap */
 /* nosourcemap */
