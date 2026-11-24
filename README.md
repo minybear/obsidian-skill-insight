@@ -2,7 +2,7 @@
 
 A desktop-only [Obsidian](https://obsidian.md) plugin that turns your AI agent sessions into an insight dashboard: which skills you use, how often, in which sessions, and how your skills evolve over time.
 
-![manifest version](https://img.shields.io/badge/version-0.7.0-blue) ![desktop only](https://img.shields.io/badge/platform-desktop-lightgrey) ![license](https://img.shields.io/badge/license-MIT-green)
+![manifest version](https://img.shields.io/badge/version-0.9.0-blue) ![desktop only](https://img.shields.io/badge/platform-desktop-lightgrey) ![license](https://img.shields.io/badge/license-MIT-green)
 
 ## What it does
 
